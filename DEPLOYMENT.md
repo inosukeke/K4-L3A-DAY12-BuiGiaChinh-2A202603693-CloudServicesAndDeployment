@@ -92,7 +92,7 @@ curl -i "$URL/ready"     # mong đợi 200 và redis=true
 curl -i -X POST "$URL/ask" -H "Content-Type: application/json" \
   -d '{"question":"Hello"}'                                  # mong đợi 401 khi thiếu key
 curl -i -X POST "$URL/ask" -H "Content-Type: application/json" \
-  -H "X-API-Key: <AGENT_API_KEY>" -H "X-User-Id: sv01" \
+  -H "X-API-Key: $AGENT_API_KEY" -H "X-User-Id: sv01" \
   -d '{"question":"Docker la gi?"}'                           # mong đợi 200
 ```
 
