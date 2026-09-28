@@ -1,0 +1,26 @@
+$ curl https://day12-agent-production-b2e0.up.railway.app/health
+{"status":"ok","version":"1.0.0","instance":"33b82fec62d8","uptime_seconds":35.3,"timestamp":"2026-09-28T15:38:57.819000+00:00"}
+HTTP 200
+
+$ curl https://day12-agent-production-b2e0.up.railway.app/ready
+{"ready":true,"redis":true}
+HTTP 200
+
+$ POST /ask (khong co key)
+{"detail":"Invalid or missing API key. Include header: X-API-Key: <key>"}
+HTTP 401
+
+$ POST /ask (sai key)
+{"detail":"Invalid or missing API key. Include header: X-API-Key: <key>"}
+HTTP 401
+
+$ POST /ask (dung key, X-User-Id: cloud-sv01) - luot 1
+{"question":"Docker la gi?","answer":"Container là cách đóng gói app để chạy ở mọi nơi. Build once, run anywhere!","user_id":"cloud-sv01","history_messages":0,"served_by":"33b82fec62d8","timestamp":"2026-09-28T15:39:00.781925+00:00"}
+HTTP 200
+
+$ POST /ask - luot 2 (history phai tang)
+{"question":"Con Redis?","answer":"Đây là câu trả lời từ AI agent (mock). Trong production, đây sẽ là response từ OpenAI/Anthropic.","user_id":"cloud-sv01","history_messages":2,"served_by":"33b82fec62d8","timestamp":"2026-09-28T15:39:01.376198+00:00"}
+HTTP 200
+
+$ 12 request lien tiep, X-User-Id: cloud-rl (gioi han 10/phut)
+200 200 200 200 200 200 200 200 200 200 429 429 

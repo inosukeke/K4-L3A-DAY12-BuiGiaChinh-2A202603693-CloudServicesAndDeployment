@@ -62,7 +62,8 @@ Bài này cần hai service (agent, redis) nên tôi để Nginx trong file over
 
 ### Exercise 3.1: Deployment
 
-- URL: chưa deploy lên Railway/Render (cần đăng nhập tài khoản cloud). Xem [DEPLOYMENT.md](DEPLOYMENT.md).
+- URL: https://day12-agent-production-b2e0.up.railway.app (Railway, gồm service agent và Redis). Kết quả kiểm tra ở [DEPLOYMENT.md](DEPLOYMENT.md).
+- Lỗi gặp khi deploy: `REDIS_URL` tham chiếu sai tên service (`day12-redis` thay vì `Redis`) nên thành chuỗi rỗng. `/health` vẫn 200 còn `/ready` trả 503, đúng như thiết kế tách liveness và readiness. Sửa tham chiếu rồi redeploy thì hết lỗi.
 - Đã chuẩn bị sẵn `railway.toml` và `render.yaml`. Khác biệt chính: `railway.toml` chỉ mô tả cách build và deploy, còn Redis thêm bằng plugin trên dashboard. `render.yaml` là Blueprint mô tả cả hạ tầng (web service và Key Value) và tự nối `REDIS_URL`, tự sinh `AGENT_API_KEY`.
 - Đã chạy thật bằng Docker Compose ở local, kết quả ở [screenshots/local-docker-evidence.txt](screenshots/local-docker-evidence.txt).
 
