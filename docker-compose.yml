@@ -1,0 +1,38 @@
+# Chạy: đặt AGENT_API_KEY trong .env (cùng thư mục) rồi `docker compose up -d --build`
+# Scale nhiều instance sau Nginx: docker compose -f docker-compose.yml -f docker-compose.scale.yml up -d --scale agent=3
+services:
+  agent:
+    build: .
+    image: day12-agent:prod
+    ports:
+      - "8000:8000"
+    environment:
+      # Compose tự đọc .env cạnh file này để thay ${...}; thiếu key thì báo lỗi ngay
+      AGENT_API_KEY: ${AGENT_API_KEY:?Đặt AGENT_API_KEY trong file .env}
+      # Trong mạng compose, gọi Redis bằng tên service, KHÔNG dùng localhost
+      REDIS_URL: redis://redis:6379/0
+      PORT: "8000"
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      RATE_LIMIT_PER_MINUTE: ${RATE_LIMIT_PER_MINUTE:-10}
+      MONTHLY_BUDGET_USD: ${MONTHLY_BUDGET_USD:-10.0}
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    stop_grace_period: 35s  # dài hơn --timeout-graceful-shutdown 30
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://localhost:8000/health', timeout=3)"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --maxmemory 128mb --maxmemory-policy allkeys-lru
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5

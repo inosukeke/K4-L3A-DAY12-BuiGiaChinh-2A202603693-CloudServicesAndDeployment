@@ -1,0 +1,31 @@
+# Render Blueprint: Dashboard -> New -> Blueprint -> chọn repo GitHub.
+# Render tự cấp PORT nên không khai báo PORT ở đây.
+services:
+  - type: web
+    name: day12-agent
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    region: singapore
+    plan: free
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: AGENT_API_KEY
+        generateValue: true  # Render tự sinh giá trị ngẫu nhiên, không nằm trong repo
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: day12-redis
+          property: connectionString
+      - key: RATE_LIMIT_PER_MINUTE
+        value: "10"
+      - key: MONTHLY_BUDGET_USD
+        value: "10"
+      - key: LOG_LEVEL
+        value: info
+
+  - type: keyvalue
+    name: day12-redis
+    plan: free
+    maxmemoryPolicy: allkeys-lru
+    ipAllowList: []  # chỉ service nội bộ cùng region truy cập được

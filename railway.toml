@@ -1,0 +1,15 @@
+# Railway: build từ Dockerfile ở root repo. Railway tự cấp PORT; CMD trong Dockerfile đọc ${PORT:-8000}.
+#
+# Biến môi trường đặt trên Railway dashboard (KHÔNG ghi giá trị vào repo):
+#   AGENT_API_KEY, REDIS_URL (=${{Redis.REDIS_URL}} sau khi thêm Redis plugin),
+#   RATE_LIMIT_PER_MINUTE, MONTHLY_BUDGET_USD, LOG_LEVEL
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+healthcheckPath = "/health"
+healthcheckTimeout = 30
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3

@@ -6,6 +6,39 @@
 
 ---
 
+## Bài làm: chạy nhanh (Bùi Gia Chính - 2A202603693)
+
+Agent production-ready ở root repo: `app/` (config, logging JSON, auth, rate limit, cost guard, Redis store, lifecycle), `Dockerfile`, `docker-compose.yml`.
+
+```bash
+# 1. Tạo .env (xem mẫu ở cuối mục này), điền AGENT_API_KEY:
+python -c "import secrets; print(secrets.token_urlsafe(32))"
+
+# 2. Chạy cả stack (agent + redis)
+docker compose up -d --build
+curl http://localhost:8000/health      # 200
+curl http://localhost:8000/ready       # 200, redis=true
+
+# 3. Gọi agent
+curl -X POST http://localhost:8000/ask -H "Content-Type: application/json" \
+  -H "X-API-Key: <AGENT_API_KEY>" -H "X-User-Id: sv01" -d '{"question":"Docker la gi?"}'
+
+# 4. Scale 3 instance sau Nginx (cổng 8080)
+docker compose -f docker-compose.yml -f docker-compose.scale.yml up -d --scale agent=3
+
+# 5. Test (offline, dùng fakeredis) và kiểm tra production-ready
+pip install -r requirements-dev.txt
+pytest tests/ -v -m "not docker"
+pytest tests/ -v            # thêm test build image (cần Docker)
+python check_production_ready.py
+```
+
+Mẫu `.env` (không commit): `AGENT_API_KEY`, `PORT=8000`, `REDIS_URL=redis://localhost:6379/0` (chạy ngoài Docker; `fake://` nếu chưa có Redis), `LOG_LEVEL=info`, `RATE_LIMIT_PER_MINUTE=10`, `MONTHLY_BUDGET_USD=10.0`.
+
+Tài liệu nộp bài: [MISSION_ANSWERS.md](MISSION_ANSWERS.md), [DEPLOYMENT.md](DEPLOYMENT.md), thư mục [screenshots/](screenshots/).
+
+---
+
 ## Cấu Trúc Project
 
 ```

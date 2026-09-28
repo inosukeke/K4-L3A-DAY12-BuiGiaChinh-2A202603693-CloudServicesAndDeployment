@@ -1,38 +1,34 @@
-# Không copy những file này vào Docker image
-# Lý do: giảm context size, tăng security
+# Không đưa vào build context: giảm kích thước và không lộ secret vào image
 
-# Python
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-.Python
-*.egg-info/
-
-# Virtual environment
-venv/
-env/
-.venv/
-
-# IDE
-.vscode/
-.idea/
-*.swp
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Secrets — QUAN TRỌNG: không bao giờ đưa .env vào image
+# Secrets - không bao giờ vào image
 .env
 .env.*
 !.env.example
 
-# Git
-.git/
+# Git / môi trường Python
+.git
 .gitignore
+.venv
+venv
+env
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+*.egg-info
+.pytest_cache
 
-# Docs và test
+# Test, tài liệu, minh chứng, bài mẫu không cần lúc chạy
+tests
+screenshots
 *.md
-tests/
-docs/
+requirements-dev.txt
+docker-compose*.yml
+nginx.conf
+0[1-6]-*
+
+# IDE / OS
+.vscode
+.idea
+.DS_Store
+Thumbs.db

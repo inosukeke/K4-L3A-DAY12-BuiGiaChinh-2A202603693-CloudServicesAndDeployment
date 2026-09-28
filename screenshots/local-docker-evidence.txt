@@ -1,0 +1,81 @@
+# Bằng chứng chạy thực tế: docker compose (local fallback) - 2026-09-28T09:41:36Z
+
+$ docker compose ps
+SERVICE   IMAGE              STATUS                    PORTS
+agent     day12-agent:prod   Up 15 seconds (healthy)   0.0.0.0:8000->8000/tcp
+redis     redis:7-alpine     Up 26 seconds (healthy)   6379/tcp
+
+$ docker images day12-agent:prod
+day12-agent:prod  189MB
+
+$ docker run --rm --entrypoint id day12-agent:prod
+uid=10001(agent) gid=10001(agent) groups=10001(agent)
+
+$ curl -i /health
+HTTP/1.1 200 OK
+{"status":"ok","version":"1.0.0","instance":"b3e34f2007da","uptime_seconds":14.8,"timestamp":"2026-09-28T09:41:39.662182+00:00"}
+$ curl -i /ready
+HTTP/1.1 200 OK
+{"ready":true,"redis":true}
+$ curl -i -X POST /ask (khong co key)
+HTTP/1.1 401 Unauthorized
+{"detail":"Invalid or missing API key. Include header: X-API-Key: <key>"}
+$ curl -i -X POST /ask (sai key)
+HTTP/1.1 401 Unauthorized
+{"detail":"Invalid or missing API key. Include header: X-API-Key: <key>"}
+$ /ask hop le (2 lan, cung X-User-Id: evidence1) -> history_messages tang
+{"question":"Docker là gì?","answer":"Container là cách đóng gói app để chạy ở mọi nơi. Build once, run anywhere!","user_id":"evidence1","history_messages":0,"served_by":"b3e34f2007da","timestamp":"2026-09-28T09:41:40.296460+00:00"}
+{"question":"Docker là gì?","answer":"Container là cách đóng gói app để chạy ở mọi nơi. Build once, run anywhere!","user_id":"evidence1","history_messages":2,"served_by":"b3e34f2007da","timestamp":"2026-09-28T09:41:40.519219+00:00"}
+
+$ 12 request lien tiep (limit 10/phut, da dung 2) -> ma tra ve
+200 200 200 200 200 200 200 200 429 429 429 429 
+
+$ redis-cli (state nam trong Redis, khong nam trong process)
+TYPE rate:evidence1 = zset
+LLEN history:evidence1 = 20
+TTL history:evidence1 = 3597
+GET cost:evidence1:2026-09 = 0.0001818
+
+$ docker compose stop redis  -> /health, /ready, /ask
+/health: 200
+/ready:  503
+/ask:    503
+
+$ docker compose start redis -> /ready
+/ready:  200
+
+$ docker compose logs agent (log JSON, moi su kien mot dong)
+{"event": "ask_completed", "level": "info", "timestamp": "2026-09-28T09:41:41+00:00", "user_id": "evidence1", "cost_usd": 1.6e-05, "history_messages": 14, "instance": "b3e34f2007da"}
+{"event": "ask_completed", "level": "info", "timestamp": "2026-09-28T09:41:42+00:00", "user_id": "evidence1", "cost_usd": 1.6e-05, "history_messages": 16, "instance": "b3e34f2007da"}
+{"event": "ask_completed", "level": "info", "timestamp": "2026-09-28T09:41:42+00:00", "user_id": "evidence1", "cost_usd": 2.1e-05, "history_messages": 18, "instance": "b3e34f2007da"}
+
+$ MONTHLY_BUDGET_USD=0.00003 docker compose up -d agent  -> gọi /ask liên tiếp (user budget1)
+{} -> 200
+{} -> 200
+{"detail":"Monthly budget of $0.00003 exhausted"} -> 402
+{"detail":"Monthly budget of $0.00003 exhausted"} -> 402
+
+$ 12 request song song, gửi SIGTERM giữa chừng (docker compose kill --signal SIGTERM agent)
+results: [(0, 200, 0.63), (1, 200, 0.58), (2, 200, 0.59), (3, 200, 0.56), (4, 200, 0.55), (5, 200, 0.56), (6, 200, 0.25), (7, 200, 0.25), (8, 200, 0.16), (9, 200, 0.27), (10, 200, 0.24), (11, 200, 0.26)]
+all 200: True
+
+container status: Exited (0) 3 seconds ago
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+{"event": "ask_completed", "level": "info", "timestamp": "2026-09-28T09:42:44+00:00", "user_id": "load8", "cost_usd": 2.1e-05, "history_mess
+{"event": "ask_completed", "level": "info", "timestamp": "2026-09-28T09:42:44+00:00", "user_id": "load4", "cost_usd": 1.6e-05, "history_mess
+{"event": "ask_completed", "level": "info", "timestamp": "2026-09-28T09:42:44+00:00", "user_id": "load3", "cost_usd": 1.8e-05, "history_mess
+{"event": "ask_completed", "level": "info", "timestamp": "2026-09-28T09:42:44+00:00", "user_id": "load5", "cost_usd": 2.1e-05, "history_mess
+{"event": "ask_completed", "level": "info", "timestamp": "2026-09-28T09:42:44+00:00", "user_id": "load6", "cost_usd": 2.1e-05, "history_mess
+{"event": "ask_completed", "level": "info", "timestamp": "2026-09-28T09:42:44+00:00", "user_id": "load1", "cost_usd": 1.6e-05, "history_mess
+{"event": "ask_completed", "level": "info", "timestamp": "2026-09-28T09:42:44+00:00", "user_id": "load2", "cost_usd": 2.1e-05, "history_mess
+{"event": "ask_completed", "level": "info", "timestamp": "2026-09-28T09:42:44+00:00", "user_id": "load7", "cost_usd": 2.1e-05, "history_mess
+{"event": "ask_completed", "level": "info", "timestamp": "2026-09-28T09:42:44+00:00", "user_id": "load10", "cost_usd": 1.6e-05, "history_mes
+{"event": "ask_completed", "level": "info", "timestamp": "2026-09-28T09:42:44+00:00", "user_id": "load11", "cost_usd": 1.6e-05, "history_mes
+{"event": "ask_completed", "level": "info", "timestamp": "2026-09-28T09:42:44+00:00", "user_id": "load9", "cost_usd": 2.1e-05, "history_mess
+{"event": "ask_completed", "level": "info", "timestamp": "2026-09-28T09:42:44+00:00", "user_id": "load0", "cost_usd": 1.8e-05, "history_mess
+INFO:     Shutting down
+{"event": "shutdown", "level": "info", "timestamp": "2026-09-28T09:42:45+00:00", "instance": "effb71a94ce1"}
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [1]
